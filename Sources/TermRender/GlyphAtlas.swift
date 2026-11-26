@@ -103,7 +103,11 @@ public final class GlyphAtlas {
         color = Page(name: "color", device: device, format: .rgba8Unorm, bpp: 4, size: 512)
     }
 
+    /// Pass as `scalar` to skip the ASCII fast path (for multi-scalar clusters).
+    public static let noFastPath = UInt32.max
+
     /// Looks up (rasterising on first use) the glyph for `text` in a cell span of 1 or 2.
+    /// `scalar` is the cell's single scalar, used as a fast-path key when it's ASCII.
     public func entry(scalar: UInt32, text: @autoclosure () -> String, variant: FontSet.Variant, span: Int) -> Entry {
         if scalar < 128 && span == 1 {
             let i = variant.rawValue * 128 + Int(scalar)

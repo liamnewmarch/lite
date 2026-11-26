@@ -240,7 +240,10 @@ public final class TerminalRenderer {
                     case (false, true): .italic
                     case (false, false): .regular
                     }
-                    let e = atlas.entry(scalar: cell.scalar, text: grid.text(col: col, row: row) ?? " ", variant: variant, span: span)
+                    // Clusters (e.g. n + combining tilde) must not take the ASCII fast path,
+                    // which is keyed by the first scalar alone.
+                    let key = cell.cluster == 0 ? cell.scalar : GlyphAtlas.noFastPath
+                    let e = atlas.entry(scalar: key, text: grid.text(col: col, row: row) ?? " ", variant: variant, span: span)
                     if !e.isEmpty {
                         glyphs.append(GlyphInstance(
                             x: Int16(clamping: x + Int(e.offsetX)), y: Int16(clamping: y + m.baseline + Int(e.offsetY)),
