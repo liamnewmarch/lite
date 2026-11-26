@@ -154,8 +154,22 @@ extension Config {
                 ?? NSFont(name: family, size: size) else {
             return (fallback, "font-family \"\(family)\" isn't installed; using the system font")
         }
-        let warning = font.isFixedPitch ? nil : "font-family \"\(family)\" isn't monospaced; text may overlap"
+        let warning = Self.isMonospaced(font as CTFont) ? nil : "font-family \"\(family)\" isn't monospaced; text may overlap"
         return (font as CTFont, warning)
+    }
+
+    /// Whether the font's text characters share one advance width. `NSFont.isFixedPitch`
+    /// isn't reliable: Nerd Font variants clear it because of their wide icon glyphs,
+    /// even though letters, digits and punctuation are all the same width.
+    static func isMonospaced(_ font: CTFont) -> Bool {
+        var chars = Array("iMW.0_".utf16)
+        var glyphs = [CGGlyph](repeating: 0, count: chars.count)
+        guard CTFontGetGlyphsForCharacters(font, &chars, &glyphs, chars.count) else { return false }
+        var advances = [CGSize](repeating: .zero, count: glyphs.count)
+        CTFontGetAdvancesForGlyphs(font, .horizontal, &glyphs, &advances, glyphs.count)
+        let widths = advances.map(\.width)
+        guard let first = widths.first, first > 0 else { return false }
+        return widths.allSatisfy { abs($0 - first) < 0.01 }
     }
 }
 

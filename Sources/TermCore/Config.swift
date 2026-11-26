@@ -27,7 +27,8 @@ public struct Config: Sendable, Equatable {
         public var line: Int
         public var message: String
         public init(line: Int, message: String) { self.line = line; self.message = message }
-        public var description: String { "line \(line): \(message)" }
+        /// `line` 0 means the problem isn't tied to a line (e.g. a font that isn't installed).
+        public var description: String { line > 0 ? "line \(line): \(message)" : message }
     }
 
     // MARK: - Location

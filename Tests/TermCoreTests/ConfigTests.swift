@@ -63,3 +63,10 @@ import Testing
         #expect(Config.directory(environment: [:]).path.hasSuffix("/.config/lite"))
     }
 }
+
+@Suite struct DiagnosticTests {
+    @Test func lineZeroHasNoPrefix() {
+        #expect(Config.Diagnostic(line: 3, message: "x").description == "line 3: x")
+        #expect(Config.Diagnostic(line: 0, message: "font missing").description == "font missing")
+    }
+}
