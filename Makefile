@@ -5,6 +5,8 @@
 #   make open       build, then launch via LaunchServices (like double-clicking)
 #   make debug      same as `make` but a debug build
 #   make test       run the Swift Testing suite
+#   make install    release build, then install to /Applications (quits a running Lite first)
+#   make uninstall  remove /Applications/Lite.app (config is kept)
 #   make icon       regenerate Resources/AppIcon.icns
 #   make clean
 #
@@ -18,13 +20,14 @@ BUILD_DIR := build
 APP       := $(BUILD_DIR)/$(APP_NAME).app
 ICON      := Resources/AppIcon.icns
 SWIFT_FLAGS := -c $(CONFIG) --arch arm64
+INSTALL_DIR ?= /Applications
 # CLT-only toolchains ship Swift Testing's macro plugin in a subdirectory SwiftPM doesn't search.
 TESTING_PLUGINS := $(shell xcode-select -p)/usr/lib/swift/host/plugins/testing
 
 # SwiftTerm is a git submodule; fetch it if the repo was cloned without --recurse-submodules.
 SWIFTTERM := Vendor/SwiftTerm/Package.swift
 
-.PHONY: all app build run open debug test icon clean
+.PHONY: all app build run open debug test install uninstall icon clean
 
 all: app
 
@@ -58,6 +61,13 @@ debug:
 
 test: $(SWIFTTERM)
 	swift test $(if $(wildcard $(TESTING_PLUGINS)),-Xswiftc -plugin-path -Xswiftc $(TESTING_PLUGINS))
+
+install:
+	$(MAKE) app CONFIG=release
+	scripts/install.sh "$(APP)" "$(INSTALL_DIR)"
+
+uninstall:
+	scripts/install.sh --uninstall "$(INSTALL_DIR)"
 
 $(ICON): scripts/make-icon.swift
 	@set -e; TMP=$$(mktemp -d); SET="$$TMP/AppIcon.iconset"; mkdir -p "$$SET"; \
