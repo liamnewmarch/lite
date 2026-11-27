@@ -224,13 +224,13 @@ public struct Config: Sendable, Equatable {
     # Lines of scrollback per tab (applies to new tabs).
     # scrollback-limit = 10000
 
-    # Key bindings: <shortcut> = <action>. Repeat the key for each. The action is a
-    # key combination to send (cmd can't be sent), or text:… with \\e, \\xNN, \\n, \\r,
+    # Key bindings: <shortcut> = <action>. Repeat the key for each. The action is
+    # key:… to send a key combination (cmd can't be sent), or text:… with \\e, \\xNN, \\n, \\r,
     # \\t escapes. Bindings take priority over menu shortcuts (cmd+a below replaces
     # Select All). Key names: a–z, 0–9, symbols, up, down, left, right, home, end,
     # pageup, pagedown, enter, tab, escape, backspace, delete, space, plus, equal, f1–f12.
-    # keybind = cmd+a = ctrl+a
-    # keybind = cmd+k = ctrl+k
+    # keybind = cmd+a = key:ctrl+a
+    # keybind = cmd+k = key:ctrl+k
     # keybind = cmd+left = text:\\x01
 
     # Quit Lite when its last window closes (default: keep running, like most Mac apps).

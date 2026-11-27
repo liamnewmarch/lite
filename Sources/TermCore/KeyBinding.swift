@@ -1,6 +1,9 @@
 /// User key bindings (`keybind = <trigger> = <action>` in the config): a shortcut that
 /// sends something to the program instead of its usual meaning, e.g. Cmd-K → Ctrl-K.
 ///
+/// Actions are prefixed: `key:ctrl+k` sends a key combination, `text:…` literal text.
+/// Bare words are reserved for named actions (none yet).
+///
 /// Triggers and key actions are written like `cmd+shift+k`: modifiers (`cmd`, `ctrl`,
 /// `opt`, `shift`, with long forms) then one key, either a character or a name
 /// (`up`, `enter`, `f5`, `space`, `plus`, `equal`…).
@@ -9,9 +12,9 @@ public struct KeyBinding: Sendable, Equatable {
     public var action: Action
 
     public enum Action: Sendable, Equatable {
-        /// Send what pressing this key combination would send (it can't include Cmd).
+        /// `key:` — send what pressing this key combination would send (it can't include Cmd).
         case keys(KeyChord)
-        /// Send these characters as they are (`text:` with \e, \xNN, \n, \r, \t, \\ escapes).
+        /// `text:` — send these characters as they are (`text:` with \e, \xNN, \n, \r, \t, \\ escapes).
         case text(String)
     }
 
@@ -31,7 +34,7 @@ public struct KeyBinding: Sendable, Equatable {
     /// Parses the value of a `keybind` line: `<trigger> = <action>`.
     public static func parse(_ value: String) -> Result<KeyBinding, ParseError> {
         guard let eq = value.firstIndex(of: "=") else {
-            return .failure(.init("expected <trigger> = <action>, e.g. cmd+k = ctrl+k"))
+            return .failure(.init("expected <trigger> = <action>, e.g. cmd+k = key:ctrl+k"))
         }
         let triggerText = value[..<eq].trimmingCharacters(in: .whitespaces)
         let actionText = value[value.index(after: eq)...].trimmingCharacters(in: .whitespaces)
@@ -44,8 +47,15 @@ public struct KeyBinding: Sendable, Equatable {
             }
             return .success(KeyBinding(trigger: trigger, action: .text(text)))
         }
-        guard let chord = KeyChord(actionText) else {
-            return .failure(.init("unrecognised action \"\(actionText)\" (a key like ctrl+k, or text:…)"))
+        // Every action has a prefix, so bare words stay free for named actions later
+        // (e.g. `new_tab`).
+        guard actionText.lowercased().hasPrefix("key:") else {
+            let hint = KeyChord(actionText) != nil ? "; did you mean key:\(actionText)?" : ""
+            return .failure(.init("unrecognised action \"\(actionText)\" (use key:… or text:…\(hint))"))
+        }
+        let chordText = actionText.dropFirst(4).trimmingCharacters(in: .whitespaces)
+        guard let chord = KeyChord(chordText) else {
+            return .failure(.init("unrecognised key \"\(chordText)\" in \"\(actionText)\""))
         }
         guard !chord.modifiers.contains(.command) else {
             return .failure(.init("an action can't use cmd: programs never receive it"))
