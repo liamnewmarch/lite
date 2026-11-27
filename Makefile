@@ -5,7 +5,7 @@
 #   make open       build, then launch via LaunchServices (like double-clicking)
 #   make debug      same as `make` but a debug build
 #   make test       run the Swift Testing suite
-#   make install    release build, then install to /Applications (quits a running Lite first)
+#   make install    release build, then install to /Applications (works while Lite runs, even from inside it; restart Lite after)
 #   make uninstall  remove /Applications/Lite.app (config is kept)
 #   make icon       regenerate Resources/AppIcon.icns
 #   make clean

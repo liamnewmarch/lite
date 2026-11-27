@@ -4,7 +4,7 @@
 # Usage: scripts/install.sh <built .app> <install dir>       install / update
 #        scripts/install.sh --uninstall <install dir>         remove
 #
-# - Quits a running Lite first (it asks before closing tabs that are busy).
+# - Works while Lite is running (even from inside it); restart Lite afterwards.
 # - Only ever replaces a bundle whose identifier is Lite's, never anything else.
 # - Registers with LaunchServices so Spotlight/Finder/Dock see the new version.
 set -eu
@@ -31,19 +31,13 @@ if [ -e "$DEST" ]; then
     fi
 fi
 
-# Quit a running Lite (the installed copy or a dev build) and wait for it to exit.
+# Lite may be running, often because this script is running *inside* it. It isn't
+# quit: that would hang up its tabs and kill this script half way. Replacing a running
+# app's bundle is safe on macOS (rm + copy makes new files; the running copy keeps the
+# old ones open), and the new version starts the next time Lite opens.
+RUNNING=false
 if osascript -e "application id \"$BUNDLE_ID\" is running" 2>/dev/null | grep -q true; then
-    echo "Quitting running Lite…"
-    osascript -e "tell application id \"$BUNDLE_ID\" to quit" >/dev/null 2>&1 || true
-    i=0
-    while osascript -e "application id \"$BUNDLE_ID\" is running" 2>/dev/null | grep -q true; do
-        i=$((i + 1))
-        if [ $i -gt 50 ]; then
-            echo "error: Lite is still running (a quit confirmation may be open); quit it and retry" >&2
-            exit 1
-        fi
-        sleep 0.2
-    done
+    RUNNING=true
 fi
 
 if [ "$MODE" = uninstall ]; then
@@ -64,3 +58,6 @@ ditto "$SRC" "$DEST"
 codesign --verify --strict "$DEST"
 "$LSREGISTER" -f "$DEST"
 echo "Installed $DEST"
+if [ "$RUNNING" = true ]; then
+    echo "Lite is running: quit it (Cmd-Q) and open it again to use the new version."
+fi
