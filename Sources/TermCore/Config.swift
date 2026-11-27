@@ -36,6 +36,8 @@ public struct Config: Sendable, Equatable {
     public var quitAfterLastWindowClosed = false
     /// nil = a narrow default (a few points; see TerminalView).
     public var windowPadding: WindowPadding?
+    /// `keybind` lines, in file order (a later binding for the same shortcut wins).
+    public var keyBindings: [KeyBinding] = []
 
     /// `windowPadding` in points, or nil for the default.
     public var windowPaddingPoints: Double? { windowPadding?.points(fontSize: fontSize) }
@@ -139,6 +141,11 @@ public struct Config: Sendable, Equatable {
                 if let b = bool(value) { config.cursorBlink = b }
             case "quit-after-last-window-closed":
                 if let b = bool(value) { config.quitAfterLastWindowClosed = b }
+            case "keybind":
+                switch KeyBinding.parse(value) {
+                case .success(let b): config.keyBindings.append(b)
+                case .failure(let e): fail("`keybind`: \(e.message)")
+                }
             case "window-padding":
                 let v = value.lowercased()
                 if v.hasSuffix("em"), let e = Double(v.dropLast(2).trimmingCharacters(in: .whitespaces)), (0...10).contains(e) {
@@ -216,6 +223,15 @@ public struct Config: Sendable, Equatable {
 
     # Lines of scrollback per tab (applies to new tabs).
     # scrollback-limit = 10000
+
+    # Key bindings: <shortcut> = <action>. Repeat the key for each. The action is a
+    # key combination to send (cmd can't be sent), or text:… with \\e, \\xNN, \\n, \\r,
+    # \\t escapes. Bindings take priority over menu shortcuts (cmd+a below replaces
+    # Select All). Key names: a–z, 0–9, symbols, up, down, left, right, home, end,
+    # pageup, pagedown, enter, tab, escape, backspace, delete, space, plus, equal, f1–f12.
+    # keybind = cmd+a = ctrl+a
+    # keybind = cmd+k = ctrl+k
+    # keybind = cmd+left = text:\\x01
 
     # Quit Lite when its last window closes (default: keep running, like most Mac apps).
     # quit-after-last-window-closed = false

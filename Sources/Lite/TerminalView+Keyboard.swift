@@ -20,11 +20,49 @@ extension TerminalView: @MainActor NSTextInputClient {
             interpretKeyEvents([event])
             return
         }
+        if let binding = keyBinding(for: event) {
+            send(binding.bytes(modes: session!.modes))
+            return
+        }
         if let bytes = directEncoding(for: event) {
             send(bytes)
             return
         }
         interpretKeyEvents([event])
+    }
+
+    /// Cmd shortcuts reach views (via this) before the main menu, so a binding like
+    /// Cmd-A → Ctrl-A wins over Select All. Unbound keys fall through to the menu.
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        guard window?.firstResponder === self, !hasMarkedText(), let session,
+              let binding = keyBinding(for: event) else {
+            return super.performKeyEquivalent(with: event)
+        }
+        send(binding.bytes(modes: session.modes))
+        return true
+    }
+
+    // MARK: - Key bindings
+
+    /// The user's binding for this key press, if any (the last one in the config wins).
+    private func keyBinding(for event: NSEvent) -> KeyBinding? {
+        guard !keyBindings.isEmpty, event.type == .keyDown else { return nil }
+        let flags = event.modifierFlags
+        var mods: KeyChord.Modifiers = []
+        if flags.contains(.command) { mods.insert(.command) }
+        if flags.contains(.control) { mods.insert(.control) }
+        if flags.contains(.option) { mods.insert(.option) }
+        if flags.contains(.shift) { mods.insert(.shift) }
+        let key: KeyChord.Key
+        if let special = specialKey(event) {
+            key = .special(special == .backtab ? .tab : special)
+        } else if let base = event.characters(byApplyingModifiers: []), !base.isEmpty {
+            key = .character(base.lowercased()) // the unshifted key, so shift+1 is "1" + shift
+        } else {
+            return nil
+        }
+        let chord = KeyChord(key: key, modifiers: mods)
+        return keyBindings.last { $0.trigger == chord }
     }
 
     /// Sends input to the program: snaps the view back to the live screen and

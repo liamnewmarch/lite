@@ -48,6 +48,9 @@ final class TerminalView: NSView {
     /// characters like é or ∑. Default: neither (the macOS convention). From the config.
     var optionAsMeta: OptionAsMeta = .none
 
+    /// User key bindings (`keybind` in the config); checked before anything else.
+    var keyBindings: [KeyBinding] = []
+
     /// The terminal font at its point size; re-rasterised per display scale.
     private(set) var font: CTFont
 
