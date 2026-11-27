@@ -32,16 +32,22 @@ extension TerminalView: NSMenuItemValidation {
     override func mouseDown(with event: NSEvent) {
         window?.makeFirstResponder(self)
         if reportsMouse(event) {
+            // The click goes to the program, but it still dismisses our selection,
+            // as a plain click does in the shell.
+            if selection != nil { selection = nil; setNeedsRender() }
             mouseButtonReported = 0
             report(.press, button: 0, event: event)
             return
         }
         let point = gridPoint(event)
+        // When the program takes the mouse, Shift is what makes a click select at all,
+        // so Shift-click there starts a new selection instead of extending the old one.
+        let shiftExtends = event.modifierFlags.contains(.shift) && session?.modes.mouseReporting != true
         switch event.clickCount {
         case 2: selection = TextSelection(anchor: point, granularity: .word)
         case 3...: selection = TextSelection(anchor: point, granularity: .line)
         default:
-            if event.modifierFlags.contains(.shift), var s = selection {
+            if shiftExtends, var s = selection {
                 s.head = point // Shift-click extends
                 selection = s
             } else {
