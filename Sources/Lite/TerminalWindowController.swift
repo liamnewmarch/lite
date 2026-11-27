@@ -29,6 +29,7 @@ final class TerminalWindowController: NSWindowController, NSWindowDelegate {
                                         scale: NSScreen.main?.backingScaleFactor ?? 2, palette: config.palette)
         terminalView = TerminalView(renderer: renderer)
         terminalView.optionAsMeta = config.optionAsMeta
+        terminalView.padding = config.windowPaddingPoints.map { CGFloat($0) }
 
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 800, height: 500),
@@ -96,7 +97,7 @@ final class TerminalWindowController: NSWindowController, NSWindowDelegate {
     var currentDirectory: String? { session?.currentDirectory }
     var runningProgram: String? { session?.runningProgram }
 
-    /// Applies a (re)loaded config. Font, colours and Option-as-Meta update live;
+    /// Applies a (re)loaded config. Font, colours, padding and Option-as-Meta update live;
     /// scrollback size and the default cursor apply to new tabs.
     func apply(_ newConfig: Config) {
         config = newConfig
@@ -104,6 +105,7 @@ final class TerminalWindowController: NSWindowController, NSWindowDelegate {
         window?.backgroundColor = newConfig.palette.background.nsColor
         terminalView.optionAsMeta = newConfig.optionAsMeta
         terminalView.setFont(newConfig.makeFont().0)
+        terminalView.padding = newConfig.windowPaddingPoints.map { CGFloat($0) }
     }
 
     private func gridDidResize(_ g: TerminalView.GridGeometry) {

@@ -33,9 +33,14 @@ enum Snapshot {
             renderer.showsOverlay = args.contains("--overlay")
             let m = renderer.metrics
             let w = Int(points.width * scale), h = Int(points.height * scale)
-            let origin = (x: Int(6 * scale), y: Int(30 * scale)) // ≈ title bar inset
-            let cols = (w - origin.x * 2) / m.cellWidth
-            let rows = (h - origin.y - Int(4 * scale)) / m.cellHeight
+            // Same padding as the app, under a ≈28pt title bar.
+            let d = TerminalView.defaultPadding
+            let pad = config.windowPaddingPoints.map { CGFloat($0) }
+            let (left, right) = (pad ?? d.left, pad ?? d.right)
+            let (top, bottom) = (pad ?? d.top, pad ?? d.bottom)
+            let origin = (x: Int(left * scale), y: Int((28 + top) * scale))
+            let cols = (w - origin.x - Int(right * scale)) / m.cellWidth
+            let rows = (h - origin.y - Int(bottom * scale)) / m.cellHeight
             var grid: GridSnapshot
             if let command = value("--run") {
                 let wait = value("--wait").flatMap(Double.init) ?? 10

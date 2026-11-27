@@ -10,6 +10,20 @@ public enum OptionAsMeta: String, Sendable, CaseIterable { case none, left, righ
 /// ignored, values may be "quoted". Repeatable keys (`palette`) accumulate. The
 /// parser lives behind `Config.parse` so a spec'd format (e.g. TOML + JSON Schema)
 /// can replace it later without touching the rest of the app.
+/// Space between the window edges and the text: a fixed size, or relative to the font size.
+public enum WindowPadding: Sendable, Equatable {
+    case points(Double)
+    /// Multiples of `font-size`, like CSS `em`.
+    case em(Double)
+
+    public func points(fontSize: Double) -> Double {
+        switch self {
+        case .points(let p): p
+        case .em(let e): e * fontSize
+        }
+    }
+}
+
 public struct Config: Sendable, Equatable {
     /// nil = the system monospaced font (SF Mono).
     public var fontFamily: String?
@@ -20,6 +34,11 @@ public struct Config: Sendable, Equatable {
     public var cursorStyle: CursorState.Style = .block
     public var cursorBlink = false
     public var quitAfterLastWindowClosed = false
+    /// nil = a narrow default (a few points; see TerminalView).
+    public var windowPadding: WindowPadding?
+
+    /// `windowPadding` in points, or nil for the default.
+    public var windowPaddingPoints: Double? { windowPadding?.points(fontSize: fontSize) }
 
     public init() {}
 
@@ -120,6 +139,15 @@ public struct Config: Sendable, Equatable {
                 if let b = bool(value) { config.cursorBlink = b }
             case "quit-after-last-window-closed":
                 if let b = bool(value) { config.quitAfterLastWindowClosed = b }
+            case "window-padding":
+                let v = value.lowercased()
+                if v.hasSuffix("em"), let e = Double(v.dropLast(2).trimmingCharacters(in: .whitespaces)), (0...10).contains(e) {
+                    config.windowPadding = .em(e)
+                } else if let pts = Double(v), (0...200).contains(pts) {
+                    config.windowPadding = .points(pts)
+                } else {
+                    fail("`window-padding`: expected points (0–200, e.g. 12) or a multiple of font-size (e.g. 1em)")
+                }
             default:
                 fail("unknown key `\(key)`")
             }
@@ -173,6 +201,10 @@ public struct Config: Sendable, Equatable {
     # palette = 13=#d6a6ee
     # palette = 14=#7fdadd
     # palette = 15=#f4f4f6
+
+    # Space around the text, on all four sides: points (e.g. 12), or a multiple of
+    # font-size (e.g. 1em, which follows font-size). Unset = a narrow default.
+    # window-padding = 1em
 
     # Cursor: block, bar or underline. Programs can still change it.
     # cursor-style = block

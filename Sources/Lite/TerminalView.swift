@@ -25,8 +25,14 @@ final class TerminalView: NSView {
         }
     }
 
-    /// Padding around the grid, in points. The top also clears the (transparent) title/tab bar.
-    private static let padding = NSEdgeInsets(top: 2, left: 6, bottom: 4, right: 6)
+    /// Padding around the grid when `window-padding` isn't set, in points. The title/tab
+    /// bar (safe area) is always added to the top on top of this.
+    static let defaultPadding = NSEdgeInsets(top: 2, left: 6, bottom: 4, right: 6)
+
+    /// Padding on all four sides, in points (`window-padding`); nil = `defaultPadding`.
+    var padding: CGFloat? {
+        didSet { if padding != oldValue { updateGeometry() } }
+    }
 
     let renderer: TerminalRenderer
     /// The terminal this view shows. Each frame pulls changed rows into `grid`.
@@ -175,7 +181,7 @@ final class TerminalView: NSView {
     func computeGeometry() -> GridGeometry {
         let scale = metalLayer.contentsScale
         let m = renderer.metrics
-        let pad = Self.padding
+        let pad = padding.map { NSEdgeInsets(top: $0, left: $0, bottom: $0, right: $0) } ?? Self.defaultPadding
         let top = Int(((safeAreaInsets.top + pad.top) * scale).rounded())
         let left = Int((pad.left * scale).rounded())
         let w = Int((bounds.width * scale).rounded())

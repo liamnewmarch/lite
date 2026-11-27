@@ -58,6 +58,17 @@ import Testing
         #expect(c.palette.background == Palette.default.background)
     }
 
+    @Test func windowPadding() {
+        #expect(Config().windowPaddingPoints == nil)
+        #expect(Config.parse("window-padding = 12").0.windowPaddingPoints == 12)
+        // em follows font-size, whichever order the keys come in.
+        let (c, d) = Config.parse("window-padding = 1.5em\nfont-size = 14")
+        #expect(d.isEmpty)
+        #expect(c.windowPadding == .em(1.5) && c.windowPaddingPoints == 21)
+        let (_, bad) = Config.parse("window-padding = wide\nwindow-padding = -1\nwindow-padding = 20em")
+        #expect(bad.map(\.line) == [1, 2, 3])
+    }
+
     @Test func xdgConfigHome() {
         #expect(Config.directory(environment: ["XDG_CONFIG_HOME": "/tmp/x"]).path == "/tmp/x/lite")
         #expect(Config.directory(environment: [:]).path.hasSuffix("/.config/lite"))
