@@ -38,9 +38,11 @@ enum Snapshot {
             let pad = config.windowPaddingPoints.map { CGFloat($0) }
             let (left, right) = (pad ?? d.left, pad ?? d.right)
             let (top, bottom) = (pad ?? d.top, pad ?? d.bottom)
-            let origin = (x: Int(left * scale), y: Int((28 + top) * scale))
-            let cols = (w - origin.x - Int(right * scale)) / m.cellWidth
-            let rows = (h - origin.y - Int(bottom * scale)) / m.cellHeight
+            let (x0, y0) = (Int(left * scale), Int((28 + top) * scale))
+            let usableW = w - x0 - Int(right * scale), usableH = h - y0 - Int(bottom * scale)
+            let cols = usableW / m.cellWidth, rows = usableH / m.cellHeight
+            // Leftover space split evenly, as in TerminalView.computeGeometry.
+            let origin = (x: x0 + (usableW - cols * m.cellWidth) / 2, y: y0 + (usableH - rows * m.cellHeight) / 2)
             var grid: GridSnapshot
             if let command = value("--run") {
                 let wait = value("--wait").flatMap(Double.init) ?? 10

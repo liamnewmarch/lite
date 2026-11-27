@@ -190,7 +190,12 @@ final class TerminalView: NSView {
         let usableH = h - top - Int((pad.bottom * scale).rounded())
         let cols = max(1, usableW / m.cellWidth)
         let rows = max(1, usableH / m.cellHeight)
-        return GridGeometry(cols: cols, rows: rows, origin: (left, top),
+        // The space left over (less than a cell) is split between both sides, so the
+        // grid sits centred inside the padding instead of leaving a wider gap at the
+        // right and bottom.
+        let x = left + max(0, usableW - cols * m.cellWidth) / 2
+        let y = top + max(0, usableH - rows * m.cellHeight) / 2
+        return GridGeometry(cols: cols, rows: rows, origin: (x, y),
                             pixelWidth: cols * m.cellWidth, pixelHeight: rows * m.cellHeight)
     }
 
